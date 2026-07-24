@@ -285,12 +285,26 @@ def _chatbot_system_prompt():
     )
 
 
-def _ask_chatbot(history):
-    """history: [{"role": "user"/"assistant", "content": str}, ...]. 마지막 사용자 질문에 대한 답을 돌려준다."""
+def _get_openai_api_key():
+    """로컬 실행: practice/.env. Streamlit Cloud 배포: Secrets(st.secrets)에서 키를 찾는다."""
     load_dotenv(os.path.join(_APP_DIR, "practice", ".env"))
     api_key = os.environ.get("OPENAI_API_KEY")
+    if api_key:
+        return api_key
+    try:
+        return st.secrets.get("OPENAI_API_KEY")
+    except Exception:
+        return None
+
+
+def _ask_chatbot(history):
+    """history: [{"role": "user"/"assistant", "content": str}, ...]. 마지막 사용자 질문에 대한 답을 돌려준다."""
+    api_key = _get_openai_api_key()
     if not api_key:
-        return "OPENAI_API_KEY가 설정되어 있지 않아 답변할 수 없습니다. practice/.env를 확인해주세요."
+        return (
+            "OPENAI_API_KEY가 설정되어 있지 않아 답변할 수 없습니다. "
+            "로컬에서는 practice/.env, Streamlit Cloud에서는 앱 Secrets에 OPENAI_API_KEY를 설정해주세요."
+        )
 
     try:
         client = OpenAI(api_key=api_key)

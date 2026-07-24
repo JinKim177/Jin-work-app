@@ -3,6 +3,8 @@
 *.env
 .env.*
 !.env.example
+.streamlit/secrets.toml
+!.streamlit/secrets.toml.example
 
 # Claude Code 로컬 설정 (기기별 권한/경로 — 공유 대상 아님)
 .claude/settings.local.json
