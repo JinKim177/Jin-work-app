@@ -1,0 +1,7 @@
+# 이 저장소가 실제로 import해서 쓰는 패키지만 담았습니다 (Python 3.10 이상 필요).
+# 설치: pip install -r requirements.txt
+
+openpyxl==3.1.5       # feature1_attendance_summary.py - 근태 엑셀 파일 읽기
+streamlit==1.60.0     # web_app.py - 조회용 웹 화면
+python-dotenv==1.2.2  # web_app.py, practice/feature3_generate_image.py, practice/feature4_categorize_memos.py, practice/gpt_verify.py - practice/.env에서 OPENAI_API_KEY 로드
+openai==2.47.0        # web_app.py(챗봇), practice/feature3_generate_image.py, practice/feature4_categorize_memos.py, practice/gpt_verify.py - GPT API 호출

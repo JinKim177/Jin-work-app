@@ -14,8 +14,9 @@
 문서를 추가할 때도 이 기조를 유지하세요 — 이 도메인에서 영문 식별자/영문 출력으로 바꾸지
 마세요.
 
-패키지 매니페스트(`requirements.txt`/`pyproject.toml`)가 없고, 테스트 스위트도 없으며, 이
-디렉터리는 git 저장소가 아닙니다.
+의존성은 `requirements.txt`로 관리합니다. 테스트 스위트는 아직 없습니다. 이 디렉터리는 git
+저장소이며(GitHub `JinKim177/Jin-work-app`에 연결됨), `.env`처럼 비밀 값이 든 파일은
+`.gitignore`로 커밋 대상에서 제외되어 있습니다.
 
 ## 명세 기반 기능 구조
 
@@ -104,9 +105,9 @@ feature3·4는 OpenAI API를 호출하며(유료), `practice/.env`의 `OPENAI_AP
 
 ## 명령어
 
-의존성 매니페스트가 없으므로 필요할 때마다 직접 설치하세요:
+의존성은 `requirements.txt`에 정리되어 있습니다:
 ```
-pip install openpyxl openai python-dotenv
+pip install -r requirements.txt
 ```
 
 Python 3.10 이상이 필요합니다(`X | None` 유니온 타입 문법 사용). `__pycache__`에 남은 컴파일
