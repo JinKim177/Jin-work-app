@@ -372,10 +372,16 @@ st.markdown(
         padding: 8px 18px;
         font-weight: 600;
         font-size: 14px;
-        color: #6B7280;
     }
-    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        color: #12213F;
+    div[data-testid="stTabs"] button[role="tab"],
+    div[data-testid="stTabs"] button[role="tab"] p,
+    div[data-testid="stTabs"] button[role="tab"] * {
+        color: #6B7280 !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"],
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p,
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] * {
+        color: #12213F !important;
     }
     div[data-testid="stTabs"] div[data-baseweb="tab-highlight"] {
         background-color: #12213F;
@@ -642,20 +648,17 @@ st.markdown(
         line-height: 1.4;
     }
 
-    /* 카톡 붙여넣기용 원문 텍스트 블록 - 복사 아이콘이 뜨는 st.code 위 라벨 */
+    /* 카톡 붙여넣기용 원문 텍스트 블록 (모바일에서도 안정적으로 보이는 일반 textarea) */
     .copy-label {
         margin-top: 8px;
     }
-    .stCodeBlock, pre {
+    div[data-testid="stTextArea"] textarea {
         border-radius: 14px !important;
         background: #F8FAFC !important;
         border: 1px solid #E7EAF3 !important;
-    }
-    .stCodeBlock code,
-    .stCodeBlock pre,
-    .stCodeBlock span,
-    .stCodeBlock * {
         color: #12213F !important;
+        font-family: 'SFMono-Regular', Consolas, monospace !important;
+        font-size: 13px !important;
     }
 
     /* 우측 하단 플로팅 챗봇 */
@@ -750,7 +753,18 @@ with tab_attendance:
                 st.markdown(_render_summary_html(parsed), unsafe_allow_html=True)
 
                 st.markdown('<div class="card-label copy-label">복사용 텍스트 (카톡 붙여넣기)</div>', unsafe_allow_html=True)
-                st.code(summary, language=None)
+                # st.code는 가상화 렌더러를 써서 모바일 좁은 화면에서 텍스트가 아예 안 그려지는
+                # 경우가 있어, 일반 textarea인 st.text_area로 대체한다(길게 눌러 복사 가능).
+                copy_height = max(160, min(320, (summary.count("\n") + 1) * 24))
+                st.text_area(
+                    "복사용 텍스트",
+                    value=summary,
+                    height=copy_height,
+                    label_visibility="collapsed",
+                    # key에 조회 날짜를 넣어야 다른 날짜를 다시 조회했을 때
+                    # 이전 값이 위젯 상태에 남아 안 바뀌는 문제를 피할 수 있다.
+                    key=f"copy_text_area_{selected_date}",
+                )
 
 with tab_by_date:
     all_counts_by_date = _code_counts_by_date(INPUTS_DIR)

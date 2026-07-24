@@ -1,0 +1,10 @@
+[theme]
+# 방문자 기기/브라우저의 다크모드 설정과 무관하게 항상 라이트 테마로 고정한다.
+# (이게 없으면 Streamlit이 기본값 "Auto"로 시스템 다크모드를 따라가면서,
+#  라이트 테마 전제로 만든 커스텀 CSS와 충돌해 글자가 흰색으로 안 보이는 문제가 생긴다.)
+base = "light"
+primaryColor = "#12213F"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F6FA"
+textColor = "#12213F"
+font = "sans serif"
