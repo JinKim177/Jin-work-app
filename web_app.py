@@ -199,6 +199,79 @@ def _render_date_matrix_html(counts_by_date):
     """
 
 
+def _render_matrix_cards_html(counts_by_date):
+    """근태구분별 스탯 카드(값 + 전일 대비 + 미니 스파크라인) 그리드를 만든다.
+    증감은 '좋고 나쁨'이 없는 인원수 데이터라 델타 색은 초록/빨강이 아니라
+    중립 톤으로 통일한다(값 자체의 방향만 화살표로 표시)."""
+    codes = _ordered_codes(counts_by_date)
+    colors = _assign_code_colors(codes)
+    esc = html.escape
+
+    date_keys = list(counts_by_date.keys())
+    date_counts = list(counts_by_date.values())
+
+    def delta_html(diff):
+        if diff > 0:
+            arrow, text = "▲", f"+{diff}"
+        elif diff < 0:
+            arrow, text = "▼", str(diff)
+        else:
+            arrow, text = "–", "0"
+        return f'<span class="stat-delta">{arrow} {text}</span>'
+
+    totals_by_date = [sum(c.values()) for c in date_counts]
+    hero_delta = (
+        delta_html(totals_by_date[-1] - totals_by_date[-2])
+        if len(totals_by_date) >= 2
+        else ""
+    )
+
+    cards = []
+    for code in codes:
+        color = colors.get(code, CODE_COLOR_FALLBACK)
+        series = [c.get(code, 0) for c in date_counts]
+        total = sum(series)
+        latest = series[-1]
+        bar_max = max(series) or 1
+
+        bars = "".join(
+            '<span class="spark-bar" style="'
+            f"height:{max(12, round(v / bar_max * 100))}%; "
+            f'background:{color if i == len(series) - 1 else "#E1E0D9"};"></span>'
+            for i, v in enumerate(series)
+        )
+
+        card_delta = delta_html(series[-1] - series[-2]) if len(series) >= 2 else ""
+        first_label = f"{date_keys[0].month}/{date_keys[0].day}"
+        last_label = f"{date_keys[-1].month}/{date_keys[-1].day}"
+
+        cards.append(
+            '<div class="stat-card">'
+            '<div class="stat-card-header">'
+            f'<span class="stat-dot" style="background:{color}"></span>'
+            f'<span class="stat-label">{esc(code)}</span>'
+            f'<span class="stat-total-pill">총 {total}명</span>'
+            "</div>"
+            '<div class="stat-value-row">'
+            f'<span class="stat-value">{latest}</span>{card_delta}'
+            "</div>"
+            f'<div class="spark-row">{bars}</div>'
+            f'<div class="stat-caption">{esc(first_label)} → {esc(last_label)}</div>'
+            "</div>"
+        )
+
+    return f"""
+    <div class="hero-row">
+        <div class="hero-label">이번 달 총 근태 인원</div>
+        <div class="hero-value-row">
+            <span class="hero-value">{totals_by_date[-1]}명</span>
+            {hero_delta}
+        </div>
+    </div>
+    <div class="stat-grid">{''.join(cards)}</div>
+    """
+
+
 def _render_summary_html(parsed):
     colors = _assign_code_colors(code for code, _ in parsed["total_items"])
     esc = html.escape
@@ -684,6 +757,107 @@ st.markdown(
         font-variant-numeric: tabular-nums;
     }
 
+    /* 월별 근태 현황 - 히어로 숫자 + 스탯 카드 그리드 */
+    .hero-row {
+        margin-bottom: 16px;
+    }
+    .hero-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #898781;
+        letter-spacing: .03em;
+        margin-bottom: 4px;
+    }
+    .hero-value-row {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+    }
+    .hero-value {
+        font-size: 34px;
+        font-weight: 800;
+        color: #12213F;
+        line-height: 1.1;
+    }
+
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+    }
+    .stat-card {
+        background: linear-gradient(180deg, #FFFFFF 0%, #FBFCFE 100%);
+        border: 1px solid #EEF0F5;
+        border-radius: 18px;
+        padding: 16px 16px 14px 16px;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+    }
+    .stat-card-header {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 10px;
+    }
+    .stat-dot {
+        width: 9px;
+        height: 9px;
+        min-width: 9px;
+        border-radius: 50%;
+    }
+    .stat-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #12213F;
+    }
+    .stat-total-pill {
+        margin-left: auto;
+        font-size: 10.5px;
+        font-weight: 700;
+        color: #898781;
+        background: #F1F2F5;
+        border-radius: 999px;
+        padding: 2px 9px;
+        white-space: nowrap;
+    }
+    .stat-value-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: #12213F;
+        line-height: 1;
+    }
+    /* 증감은 좋고 나쁨이 없는 인원수 데이터라 초록/빨강 대신 중립 톤만 쓴다 */
+    .hero-delta,
+    .stat-delta {
+        font-size: 12px;
+        font-weight: 700;
+        color: #6B7280;
+        background: #F1F2F5;
+        border-radius: 999px;
+        padding: 2px 9px;
+    }
+    .spark-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+        height: 28px;
+        margin-bottom: 8px;
+    }
+    .spark-bar {
+        width: 7px;
+        min-height: 12%;
+        border-radius: 4px 4px 0 0;
+    }
+    .stat-caption {
+        font-size: 11px;
+        color: #9CA3AF;
+    }
+
     /* 파일 찾음 안내 - 눈에 덜 띄어도 되는 보조 정보라 최소 크기로 축소 */
     .file-found-note {
         font-size: 10px;
@@ -853,7 +1027,10 @@ with tab_by_date:
                     f'<div class="card-label">{html.escape(_matrix_title(month_counts))}</div>',
                     unsafe_allow_html=True,
                 )
-                st.markdown(_render_date_matrix_html(month_counts), unsafe_allow_html=True)
+                st.markdown(_render_matrix_cards_html(month_counts), unsafe_allow_html=True)
+
+                with st.expander("표로 보기 (정확한 숫자)"):
+                    st.markdown(_render_date_matrix_html(month_counts), unsafe_allow_html=True)
 
 
 # ── 우측 하단 플로팅 챗봇 위젯 ────────────────────────────────────────
