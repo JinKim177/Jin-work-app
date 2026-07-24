@@ -15,11 +15,13 @@
 
 import glob
 import html
+import json
 import os
 import re
 from datetime import date
 
 import streamlit as st
+import streamlit.components.v1 as components
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -253,6 +255,48 @@ def _render_summary_html(parsed):
         </div>
     </div>
     """
+
+
+def _render_copy_button(text, widget_key):
+    """텍스트를 클립보드로 복사하는 버튼을 렌더링한다 (components.html은 자체 iframe이라
+    페이지 <style>을 상속받지 않으므로, 버튼 스타일을 인라인으로 직접 넣는다)."""
+    # "</script>"가 텍스트에 섞여 있어도 <script> 태그를 조기 종료시키지 않도록 이스케이프한다.
+    payload = json.dumps(text).replace("</", "<\\/")
+    components.html(
+        f"""
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+          <button id="copy-btn-{widget_key}" style="
+              background:#12213F; color:#FFFFFF; border:none; border-radius:999px;
+              padding:8px 20px; font-weight:600; font-size:13px; cursor:pointer;
+              box-shadow:0 4px 12px rgba(18,33,63,0.25);
+          ">📋 복사하기</button>
+        </div>
+        <script>
+          const btn = document.getElementById("copy-btn-{widget_key}");
+          btn.addEventListener("click", async () => {{
+            const text = {payload};
+            try {{
+              await navigator.clipboard.writeText(text);
+            }} catch (err) {{
+              const ta = document.createElement("textarea");
+              ta.value = text;
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand("copy");
+              document.body.removeChild(ta);
+            }}
+            const original = btn.innerText;
+            btn.innerText = "복사 완료 ✓";
+            btn.style.background = "#1BAF7A";
+            setTimeout(() => {{
+              btn.innerText = original;
+              btn.style.background = "#12213F";
+            }}, 1500);
+          }});
+        </script>
+        """,
+        height=48,
+    )
 
 
 # ── 안내 챗봇 (우측 하단 플로팅) ───────────────────────────────────────
@@ -765,6 +809,7 @@ with tab_attendance:
                     # 이전 값이 위젯 상태에 남아 안 바뀌는 문제를 피할 수 있다.
                     key=f"copy_text_area_{selected_date}",
                 )
+                _render_copy_button(summary, widget_key=f"summary_{selected_date}")
 
 with tab_by_date:
     all_counts_by_date = _code_counts_by_date(INPUTS_DIR)
